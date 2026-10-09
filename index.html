@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missing: Jenny Walker – Past Tenses Detective</title>
+<style>
+:root{
+  --sea:#b7d2dc; --land:#e6ece6; --ink:#14293a; --ink2:#3b5163; --line:#8aa3b0;
+  --manila:#f1e3b3; --manila-d:#d9c786; --signal:#e8591f; --ok:#1f8a5b; --bad:#c62f3a;
+  --sp:#2f78d6; --pc:#1f9a6b; --pp:#c98a00; --ppc:#c2417a;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:"Avenir Next","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --type:"Courier New",Courier,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#cfdde2;color:var(--ink);font-family:var(--sans);line-height:1.5}
+button,input{font:inherit}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+
+header{background:var(--ink);color:#f4f1e6;padding:14px clamp(14px,3vw,32px);display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;justify-content:space-between}
+header h1{font-family:var(--serif);font-size:clamp(1.3rem,2.6vw,1.9rem);margin:0;font-weight:700;letter-spacing:.01em}
+header h1 small{display:block;font-family:var(--sans);font-size:.8rem;font-weight:400;opacity:.75;letter-spacing:0}
+.hud{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font-size:.92rem}
+.hud b{font-size:1.15rem}
+.hud label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.linkbtn{background:none;border:1px solid #6d8696;color:#f4f1e6;border-radius:6px;padding:4px 10px;cursor:pointer}
+.linkbtn:hover{background:#244157}
+
+.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:18px;padding:18px clamp(14px,3vw,32px);align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* MAP */
+.mapbox{background:var(--land);border:2px solid var(--ink);border-radius:4px;padding:8px;box-shadow:6px 6px 0 rgba(20,41,58,.25)}
+.map{position:relative;width:100%;aspect-ratio:900/560;overflow:hidden}
+.map svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.mapcap{margin:8px 4px 0;font-size:.85rem;color:var(--ink2)}
+.pin{position:absolute;transform:translate(-50%,-50%);background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;width:96px}
+.pin .dot{width:30px;height:30px;border-radius:50%;background:var(--signal);color:#fff;font-weight:700;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);transition:transform .15s}
+.pin:hover .dot{transform:scale(1.12)}
+.pin .lab{font-size:.72rem;line-height:1.15;text-align:center;background:rgba(255,255,255,.85);padding:1px 5px;border-radius:3px;color:var(--ink);max-width:96px}
+.pin.solved .dot{background:var(--ok)}
+.pin.active .dot{outline:3px solid var(--ink);outline-offset:2px;transform:scale(1.15)}
+.pin.cand .dot{background:#fff;color:var(--ink);border:2px dashed var(--ink2)}
+.pin.cand.live .dot{background:var(--manila);animation:pulse 1.6s ease-in-out infinite}
+.pin.cand.wrong .dot{background:#f3c5c8;border-color:var(--bad);animation:none}
+.pin:disabled{cursor:default}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(232,89,31,.25)}}
+@media(prefers-reduced-motion:reduce){.pin.cand.live .dot{animation:none}.pin .dot{transition:none}}
+#route{fill:none;stroke:var(--signal);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2 9}
+#ferry{stroke:var(--signal);stroke-width:3;stroke-dasharray:2 9;stroke-linecap:round}
+
+/* PANEL */
+.panel{background:var(--manila);border:2px solid var(--ink);border-radius:4px;padding:20px 20px 22px;box-shadow:6px 6px 0 rgba(20,41,58,.25);min-height:380px;position:relative}
+.panel::before{content:"";position:absolute;left:18px;top:-12px;width:90px;height:22px;background:var(--manila-d);border:2px solid var(--ink);border-bottom:0;border-radius:6px 6px 0 0}
+.panel h2{font-family:var(--serif);margin:4px 0 8px;font-size:1.5rem;line-height:1.2}
+.panel h3{font-family:var(--serif);margin:18px 0 6px;font-size:1.1rem}
+.panel p{margin:8px 0}
+.note{font-size:.88rem;color:var(--ink2)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.btn{background:var(--ink);color:#fff;border:2px solid var(--ink);border-radius:4px;padding:9px 16px;cursor:pointer;font-weight:600}
+.btn:hover{background:#244157}
+.btn.alt{background:transparent;color:var(--ink)}
+.btn.alt:hover{background:rgba(20,41,58,.1)}
+.btn.go{background:var(--signal);border-color:var(--signal)}
+.btn.go:hover{background:#cf4a15}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.namefield{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.namefield input{border:2px solid var(--ink);background:#fffdf3;border-radius:4px;padding:7px 10px;width:210px}
+
+.evidence{background:#fffdf3;border:1px solid var(--manila-d);border-left:6px solid var(--ink);padding:10px 14px 10px 14px;font-family:var(--type);font-size:.92rem;margin-top:10px}
+.evidence .when{font-weight:700;color:var(--signal);margin-bottom:4px}
+.evidence ul{margin:0;padding-left:18px}
+.evidence li{margin:3px 0}
+
+.report p.sent{background:#fffdf3;border:1px solid var(--manila-d);padding:10px 12px;margin:8px 0;line-height:2.5;font-size:1rem}
+.gapwrap{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;vertical-align:middle;line-height:1.2}
+.chip{font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:10px;color:#fff;white-space:nowrap}
+.chip.sp{background:var(--sp)}.chip.pc{background:var(--pc)}.chip.pp{background:var(--pp)}.chip.ppc{background:var(--ppc)}
+body.nolabels .gapwrap .chip{display:none}
+input.gap{border:0;border-bottom:3px solid var(--ink);background:#f6efd2;padding:3px 6px;width:11.5ch;min-width:9ch;font-family:var(--type);font-size:.98rem;color:var(--ink)}
+input.gap.long{width:17ch}
+input.gap.ok{border-color:var(--ok);background:#d8f0e3;color:#0f5a3a;font-weight:700}
+input.gap.bad{border-color:var(--bad);background:#f8d9dc;animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@media(prefers-reduced-motion:reduce){input.gap.bad{animation:none}}
+.verb{font-family:var(--type);color:var(--ink2);font-size:.9rem}
+.reveal{font-size:.75rem;background:none;border:1px solid var(--ink2);border-radius:3px;cursor:pointer;color:var(--ink2);padding:0 6px}
+.fb{margin-top:10px;font-weight:600;min-height:1.5em}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.hints{background:#fff7d6;border:1px dashed var(--ink2);padding:8px 12px;margin-top:10px;font-size:.9rem}
+.hints ul{margin:4px 0 0;padding-left:18px}
+.why{list-style:none;padding:0;margin:6px 0 0}
+.why li{margin:7px 0;padding-left:0;font-size:.93rem}
+.v{font-weight:700}.v.sp{color:var(--sp)}.v.pc{color:var(--pc)}.v.pp{color:var(--pp)}.v.ppc{color:var(--ppc)}
+.stamp{display:inline-block;border:3px solid var(--ok);color:var(--ok);font-family:var(--serif);font-weight:700;padding:1px 10px;transform:rotate(-3deg);margin-bottom:6px}
+.score{font-family:var(--serif);font-size:2.6rem;margin:0;line-height:1}
+.rank{font-family:var(--serif);font-size:1.3rem;color:var(--signal)}
+
+/* BOTTOM */
+.below{padding:0 clamp(14px,3vw,32px) 36px;display:grid;gap:18px;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr)}
+@media(max-width:900px){.below{grid-template-columns:1fr}}
+.card{background:#f7faf8;border:2px solid var(--ink);border-radius:4px;padding:16px 18px}
+.card h2{font-family:var(--serif);margin:0 0 4px;font-size:1.3rem}
+.timeline{list-style:none;margin:10px 0 0;padding:0 0 0 18px;border-left:3px solid var(--ink)}
+.timeline li{position:relative;margin:0 0 14px;padding-left:12px}
+.timeline li::before{content:"";position:absolute;left:-26px;top:5px;width:13px;height:13px;border-radius:50%;background:#fff;border:3px solid var(--ink2)}
+.timeline li.done::before{background:var(--ok);border-color:var(--ok)}
+.timeline .t{font-weight:700;font-size:.9rem}
+.timeline .missing{color:var(--ink2);font-style:italic}
+details.guide summary{cursor:pointer;font-family:var(--serif);font-size:1.3rem;font-weight:700}
+.guide table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.88rem}
+.guide th,.guide td{border-top:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+.guide th{font-weight:700}
+.guide code{font-family:var(--type);background:#e8efe9;padding:0 3px}
+.guide .clue-words{margin-top:10px;font-size:.88rem}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Missing: Jenny Walker<small>A past tenses investigation</small></h1>
+  <div class="hud" role="group" aria-label="Game status">
+    <span>Evidence <b id="hudClues">0/7</b></span>
+    <span>Score <b id="hudScore">0</b></span>
+    <label><input type="checkbox" id="chkLabels" checked> Show tense labels</label>
+    <button class="linkbtn" id="btnRestart" type="button">Restart</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="mapbox" aria-label="Map of the investigation">
+    <div class="map" id="map">
+      <svg viewBox="0 0 900 560" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="900" height="560" fill="#b7d2dc"/>
+        <!-- sea lines -->
+        <g stroke="#9fc2cf" stroke-width="1" fill="none">
+          <path d="M800 380 q20 -8 40 0 t40 0"/><path d="M810 430 q20 -8 40 0 t40 0"/>
+          <path d="M790 480 q20 -8 40 0 t40 0"/><path d="M830 250 q20 -8 40 0 t30 0"/>
+          <path d="M720 60 q20 -8 40 0 t40 0"/><path d="M640 20 q15 -6 30 0 t30 0"/>
+        </g>
+        <!-- mainland -->
+        <path d="M0 0 L690 0 C690 80 740 160 730 230 C725 290 790 300 790 350 C790 420 760 500 780 560 L0 560 Z" fill="#e6ece6" stroke="#14293a" stroke-width="2"/>
+        <!-- island -->
+        <path d="M760 130 C760 80 800 60 835 62 C880 64 900 100 892 140 C885 185 840 200 800 192 C770 185 760 160 760 130 Z" fill="#e6ece6" stroke="#14293a" stroke-width="2"/>
+        <!-- woods -->
+        <g fill="#cfdcd0"><circle cx="390" cy="70" r="30"/><circle cx="430" cy="55" r="26"/><circle cx="455" cy="95" r="30"/><circle cx="400" cy="125" r="24"/></g>
+        <!-- roads -->
+        <g stroke="#a9b9ae" stroke-width="5" fill="none" stroke-linecap="round">
+          <path d="M20 500 L200 440 L330 470 L520 420 L640 330"/>
+          <path d="M60 300 L240 360 L330 250 L480 290 L560 200"/>
+          <path d="M200 440 L240 360"/><path d="M520 420 L640 400 L740 360"/>
+          <path d="M330 250 L330 150 L200 130"/>
+        </g>
+        <!-- city blocks -->
+        <g fill="#d6dfd8"><rect x="40" y="380" width="120" height="90"/><rect x="190" y="290" width="110" height="80"/><rect x="270" y="395" width="110" height="70"/><rect x="560" y="320" width="150" height="110"/></g>
+        <!-- labels -->
+        <g font-family="Georgia,serif" font-style="italic" fill="#3b5163">
+          <text x="60" y="540" font-size="22">The city</text>
+          <text x="560" y="470" font-size="20">Port Marlow</text>
+          <text x="805" y="230" font-size="16">Whisper Island</text>
+          <text x="800" y="520" font-size="18">North Sea</text>
+        </g>
+        <polyline id="route" points=""/>
+        <line id="ferry" x1="776" y1="330" x2="815" y2="195" style="display:none"/>
+      </svg>
+      <div id="pins"></div>
+    </div>
+    <p class="mapcap">Each pin holds a piece of evidence. Your route line grows as you reconstruct Jenny's movements.</p>
+  </section>
+
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+</main>
+
+<div class="below">
+  <section class="card" aria-label="Case file">
+    <h2>Case file: Jenny's 48 hours</h2>
+    <p class="note" style="margin:0">Your reports appear here in time order, as soon as you complete them.</p>
+    <ol class="timeline" id="timeline"></ol>
+  </section>
+
+  <section class="card guide">
+    <details>
+      <summary>Tense guide</summary>
+      <table>
+        <tr><th>Tense</th><th>Form</th><th>Use</th></tr>
+        <tr><td><span class="chip sp">Simple past</span></td><td><code>walked</code>, <code>bought</code></td><td>A finished action at a specific time: <i>She left at 6 pm.</i></td></tr>
+        <tr><td><span class="chip pc">Past continuous</span></td><td><code>was/were + -ing</code></td><td>An action in progress at a moment in the past, or interrupted: <i>She was talking when I saw her.</i></td></tr>
+        <tr><td><span class="chip pp">Past perfect</span></td><td><code>had + past participle</code></td><td>An action completed before another past action: <i>She had decided before she left.</i></td></tr>
+        <tr><td><span class="chip ppc">Past perfect continuous</span></td><td><code>had been + -ing</code></td><td>An action in progress for some time before another past moment: <i>She had been walking for an hour when she arrived.</i></td></tr>
+      </table>
+      <p class="clue-words"><b>Clue words:</b> <i>while, as</i> (past continuous) · <i>when</i> (simple past) · <i>before, after, by the time, already</i> (past perfect) · <i>for, since, how long</i> (past perfect continuous).</p>
+    </details>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- DATA ---------- */
+const TENSES = {
+  sp:{name:"Simple past"}, pc:{name:"Past continuous"},
+  pp:{name:"Past perfect"}, ppc:{name:"Past perfect continuous"}
+};
+
+/* gap = {v: verb shown, a: accepted answers, t: tense key, h: form hint, w: why} */
+const CLUES = [
+  { id:1, when:"Monday, 18:00", short:"Mon 18:00", place:"Jenny's flat", icon:"🏠", x:100, y:425,
+    title:"The neighbour's statement",
+    notes:["Source: Mrs Patel, neighbour (witness statement).",
+           "18:00 – Jenny leaves her flat. Red backpack.",
+           "She is on the phone. Locks the door quickly, in a hurry."],
+    sentences:[[
+      "On Monday at 6 pm, Jenny ",
+      {v:"lock",a:["locked"],t:"sp",h:"regular verb: add -ed",w:"A finished action at a specific time (6 pm) → simple past."},
+      " the door of her flat while she ",
+      {v:"talk",a:["was talking"],t:"pc",h:"was/were + verb-ing",w:"“while” introduces an action in progress → past continuous."},
+      " on the phone."
+    ]]},
+  { id:2, when:"Monday, 18:25 – 19:05", short:"Mon 19:05", place:"The Blue Cup café", icon:"☕", x:245, y:330,
+    title:"The barista and the receipt",
+    notes:["Source: barista + till receipt, The Blue Cup.",
+           "18:25 – Jenny arrives, orders 2 coffees, sits alone. Checks her phone again and again.",
+           "Nobody comes. 19:05 – she pays and leaves. 2nd coffee untouched."],
+    sentences:[[
+      "By 7:05 pm, Jenny ",
+      {v:"wait",a:["had been waiting","'d been waiting"],t:"ppc",h:"had been + verb-ing",w:"“for forty minutes” + a later moment (7:05) → past perfect continuous."},
+      " for forty minutes, so she ",
+      {v:"pay",a:["paid"],t:"sp",h:"irregular: pay → ?",w:"A finished action in the sequence of events → simple past."},
+      " and left."
+    ]]},
+  { id:3, when:"Monday, 19:20", short:"Mon 19:20", place:"Central bus station", icon:"🚌", x:325, y:430,
+    title:"CCTV at the bus station",
+    notes:["Source: CCTV, central bus station.",
+           "19:20 – Jenny buys a ticket. Takes bus 42 to Port Marlow (on the coast).",
+           "Weather at that moment: heavy rain. Jenny gets on the bus."],
+    sentences:[[
+      "At 7:20 pm, Jenny ",
+      {v:"buy",a:["bought"],t:"sp",h:"irregular: buy → ?",w:"A finished action at a specific time → simple past."},
+      " a ticket and ",
+      {v:"catch",a:["caught"],t:"sp",h:"irregular: catch → ?",w:"Another finished action in the sequence → simple past."},
+      " bus 42 to Port Marlow."
+    ],[
+      "It ",
+      {v:"rain",a:["was raining"],t:"pc",h:"was/were + verb-ing",w:"Background action in progress when something else happened → past continuous."},
+      " heavily when she ",
+      {v:"get",a:["got"],t:"sp",h:"irregular: get → ?",w:"A short action that happened in the middle of the longer one → simple past."},
+      " on the bus."
+    ]]},
+  { id:4, when:"Monday, 21:00", short:"Mon 21:00", place:"Sea View B&B", icon:"🛏️", x:595, y:365,
+    title:"The landlady's statement",
+    notes:["Source: Mrs Reed, landlady, Sea View B&B.",
+           "21:00 – Jenny arrives. Soaked. Bus 42 broke down 3 km before town.",
+           "She walks for one hour in the rain. Mrs Reed gives her a towel and hot tea."],
+    sentences:[[
+      "When Jenny arrived at the B&B at 9 pm, she ",
+      {v:"walk",a:["had been walking","'d been walking"],t:"ppc",h:"had been + verb-ing",w:"An action in progress for an hour BEFORE she arrived → past perfect continuous."},
+      " in the rain for an hour."
+    ],[
+      "Mrs Reed ",
+      {v:"give",a:["gave"],t:"sp",h:"irregular: give → ?",w:"A finished action → simple past."},
+      " her a towel and a cup of hot tea."
+    ]]},
+  { id:5, when:"Tuesday, 10:00 – 11:30", short:"Tue 11:30", place:"Port Marlow library", icon:"📚", x:660, y:265,
+    title:"The librarian's notes",
+    notes:["Source: Mr Dunn, librarian, Port Marlow library.",
+           "Tue 10:00 – Jenny asks for books about the lighthouse on Whisper Island. She says she read about it online before coming.",
+           "11:30 – she leaves. In the archive she found an old map of the island."],
+    sentences:[[
+      "Before she asked Mr Dunn for help, Jenny ",
+      {v:"already / read",a:["had already read","had read already","'d already read"],t:"pp",h:"had + past participle (read → read)",w:"Reading online happened BEFORE asking for help → past perfect."},
+      " about the lighthouse online."
+    ],[
+      "By the time she left the library, she ",
+      {v:"find",a:["had found","'d found"],t:"pp",h:"had + past participle",w:"“By the time” + earlier action completed → past perfect."},
+      " an old map of the island."
+    ]]},
+  { id:6, when:"Tuesday, 14:00", short:"Tue 14:00", place:"Harbour shop", icon:"🛒", x:715, y:395,
+    title:"The shopkeeper's statement",
+    notes:["Source: Ms Ortiz, harbour shop.",
+           "14:00 – Jenny buys a torch, batteries, bread and water.",
+           "She says: “I want to stay on the island tonight.” (She made the decision earlier that day.)",
+           "Ms Ortiz packs the bag. At the same time, Jenny looks at an old photo of her grandfather, a lighthouse keeper."],
+    sentences:[[
+      "Jenny ",
+      {v:"buy",a:["bought"],t:"sp",h:"irregular: buy → ?",w:"A finished action in the sequence → simple past."},
+      " a torch and some food after she ",
+      {v:"decide",a:["had decided","'d decided"],t:"pp",h:"had + past participle",w:"Deciding came BEFORE buying → past perfect."},
+      " to stay on the island."
+    ],[
+      "While Ms Ortiz ",
+      {v:"pack",a:["was packing"],t:"pc",h:"was/were + verb-ing",w:"“While” + action in progress → past continuous."},
+      " her bag, Jenny ",
+      {v:"look",a:["was looking"],t:"pc",h:"was/were + verb-ing",w:"Two actions in progress at the same time → past continuous."},
+      " at an old photo of her grandfather."
+    ]]},
+  { id:7, when:"Tuesday 16:30 – Wednesday 11:00", short:"Wed 11:00", place:"Marlow pier", icon:"⚓", x:760, y:325,
+    title:"The boatman's statement",
+    notes:["Source: Tom Hale, boatman, Marlow pier.",
+           "Tue 16:30 – takes Jenny to Whisper Island. A storm is coming. He promises to collect her on Wednesday at 10:00.",
+           "Wed 10:00 – Jenny isn't at the pier. Tom waits one hour.",
+           "Wed 11:00 – he calls the police."],
+    sentences:[[
+      "Tom ",
+      {v:"take",a:["took"],t:"sp",h:"irregular: take → ?",w:"A finished action at a specific time → simple past."},
+      " Jenny to Whisper Island at 4:30 pm on Tuesday."
+    ],[
+      "On Wednesday he ",
+      {v:"wait",a:["had been waiting","'d been waiting"],t:"ppc",h:"had been + verb-ing",w:"Waiting for an hour continued up to the moment he called → past perfect continuous."},
+      " at the pier for an hour when he finally ",
+      {v:"call",a:["called"],t:"sp",h:"regular verb: add -ed",w:"A single finished action → simple past."},
+      " the police."
+    ]]}
+];
+
+const CANDS = [
+  {id:"lighthouse", name:"The old lighthouse", x:835, y:105, ok:true},
+  {id:"cave",       name:"The sea cave",       x:790, y:170, msg:"A cave? Nothing in the evidence mentions one. Think about the old map, the photo and the library."},
+  {id:"factory",    name:"The old factory",    x:170, y:170, msg:"Nothing points to a factory. Where did the boatman take her?"},
+  {id:"cabin",      name:"The forest cabin",   x:420, y:105, msg:"Nobody saw Jenny go into the woods. Read the evidence from the pier again."},
+  {id:"railway",    name:"The railway station",x:440, y:255, msg:"Jenny took a bus, not a train, and she never came back from the coast."}
+];
+
+/* ---------- STATE ---------- */
+let S;
+function fresh(){ return {view:"intro", current:null, solved:{}, gaps:{}, hintShown:{}, score:0, name:"Detective", finalTries:0, wrong:{}, finalMsg:"", finished:false}; }
+S = fresh();
+const MAXPTS = CLUES.reduce((n,c)=>n+flatGaps(c).length,0)*10 + 10;
+
+/* ---------- HELPERS ---------- */
+const $ = s=>document.querySelector(s);
+const panel = $("#panel"), pinsEl = $("#pins");
+function flatGaps(c){ return c.sentences.flat().filter(p=>typeof p!=="string"); }
+function gs(k){ return S.gaps[k] || (S.gaps[k]={status:"idle",tries:0,hint:false,value:""}); }
+function norm(s){ return s.toLowerCase().replace(/[’‘`´]/g,"'").replace(/\s+/g," ").replace(/[.!?]+$/,"").trim(); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+function pct(c){ return (c/900*100)+"%"; }
+function pctY(c){ return (c/560*100)+"%"; }
+function solvedCount(){ return Object.keys(S.solved).length; }
+function nextUnsolved(){ return CLUES.find(c=>!S.solved[c.id]); }
+
+/* ---------- MAP ---------- */
+function renderPins(){
+  pinsEl.innerHTML = "";
+  const inClue = S.view==="clue", finalPhase = S.view==="final";
+  CLUES.forEach(c=>{
+    const b = document.createElement("button");
+    b.type="button";
+    b.className = "pin"+(S.solved[c.id]?" solved":"")+(inClue&&S.current===c.id?" active":"");
+    b.style.left=pct(c.x); b.style.top=pctY(c.y);
+    b.disabled = (S.view==="intro"||finalPhase||S.view==="result") && !S.solved[c.id] ? true : (S.view==="intro");
+    b.setAttribute("aria-label","Evidence "+c.id+": "+c.place+(S.solved[c.id]?" (solved)":""));
+    b.innerHTML = '<span class="dot">'+(S.solved[c.id]?"✓":c.id)+'</span><span class="lab">'+esc(c.place)+'</span>';
+    b.addEventListener("click",()=>openClue(c.id));
+    pinsEl.appendChild(b);
+  });
+  CANDS.forEach(c=>{
+    const b = document.createElement("button");
+    b.type="button";
+    const live = finalPhase;
+    b.className = "pin cand"+(live?" live":"")+(S.wrong[c.id]?" wrong":"");
+    b.style.left=pct(c.x); b.style.top=pctY(c.y);
+    b.disabled = !live || S.wrong[c.id];
+    b.setAttribute("aria-label", live ? "Possible hiding place: "+c.name : "Unknown place");
+    b.innerHTML = '<span class="dot">?</span>'+(live?'<span class="lab">'+esc(c.name)+'</span>':'');
+    if(live) b.addEventListener("click",()=>pickFinal(c));
+    pinsEl.appendChild(b);
+  });
+  const pts = CLUES.filter(c=>S.solved[c.id]).map(c=>c.x+","+c.y).join(" ");
+  $("#route").setAttribute("points", pts);
+  $("#ferry").style.display = S.solved[7] ? "block" : "none";
+  $("#hudClues").textContent = solvedCount()+"/7";
+  $("#hudScore").textContent = S.score;
+}
+
+/* ---------- PANEL VIEWS ---------- */
+function render(){
+  if(S.view==="intro") renderIntro();
+  else if(S.view==="map") renderMapView();
+  else if(S.view==="clue") renderClue(CLUES[S.current-1]);
+  else if(S.view==="final") renderFinal();
+  else renderResult();
+  renderPins(); renderTimeline();
+}
+
+function renderIntro(){
+  panel.innerHTML =
+   '<h2>Jenny Walker has been missing for 48 hours</h2>'+
+   '<p>Jenny, 24, left her flat on <b>Monday at 6 pm</b>. Nobody has seen her since. It is now Wednesday evening, and the police need a clear report of what she did.</p>'+
+   '<p>You are the investigator. Visit every pin on the map, read the evidence notes and <b>write your report in the past</b>. The notes give you facts, not grammar: you decide which past tense each sentence needs.</p>'+
+   '<p class="note">You will use the simple past, past continuous, past perfect and past perfect continuous. Open the tense guide at the bottom of the page if you need it.</p>'+
+   '<div class="namefield"><label for="nm">Your name, investigator:</label><input id="nm" type="text" maxlength="24" placeholder="e.g. Ana García" autocomplete="off"></div>'+
+   '<div class="btnrow"><button class="btn go" data-act="start" type="button">Open the case</button></div>';
+}
+
+function renderMapView(){
+  const n = solvedCount();
+  panel.innerHTML =
+   '<h2>'+(n===0?"Where do we start, "+esc(S.name)+"?":"Keep going, "+esc(S.name))+'</h2>'+
+   '<p>Click a numbered pin on the map to read the evidence.</p>'+
+   '<p class="note">'+n+' of 7 pieces of evidence reported. The timeline below the map shows what is still missing.</p>'+
+   '<div class="btnrow">'+(n<7?'<button class="btn" data-act="next" type="button">Take me to the next pin</button>':'<button class="btn go" data-act="final" type="button">Where is Jenny?</button>')+'</div>';
+}
+
+function sentenceHTML(c, edit){
+  let gi=0, html="";
+  c.sentences.forEach(s=>{
+    html+='<p class="sent">';
+    s.forEach(p=>{
+      if(typeof p==="string"){ html+=esc(p); return; }
+      const k=c.id+"-"+gi, g=gs(k);
+      if(edit){
+        const done = g.status==="ok"||g.status==="revealed";
+        const cls = "gap"+(p.a[0].length>12?" long":"")+(g.status==="ok"||g.status==="revealed"?" ok":"")+(g.status==="bad"?" bad":"");
+        const val = done ? p.a[0] : g.value;
+        html+='<span class="gapwrap"><span class="chip '+p.t+'">'+TENSES[p.t].name+'</span>'+
+              '<input class="'+cls+'" data-k="'+k+'" data-gi="'+gi+'" type="text" value="'+esc(val)+'" '+(done?"disabled ":"")+
+              'autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Gap '+(gi+1)+', verb '+esc(p.v)+', '+TENSES[p.t].name+'">'+
+              '<span class="verb">('+esc(p.v)+')</span>'+
+              (g.tries>=3&&!done?'<button class="reveal" type="button" data-act="reveal" data-k="'+k+'">show</button>':"")+'</span>';
+      } else {
+        html+='<span class="v '+p.t+'">'+esc(p.a[0])+'</span>';
+      }
+      gi++;
+    });
+    html+='</p>';
+  });
+  return html;
+}
+
+function renderClue(c){
+  const solved = !!S.solved[c.id];
+  let html = '<div class="note">Evidence '+c.id+' of 7 – '+esc(c.place)+'</div>'+
+             '<h2>'+c.icon+' '+esc(c.title)+'</h2>'+
+             '<div class="evidence"><div class="when">'+esc(c.when)+'</div><ul>'+c.notes.map(n=>'<li>'+esc(n)+'</li>').join("")+'</ul></div>';
+  if(solved){
+    html += '<h3>Your report</h3><div class="report">'+sentenceHTML(c,false)+'</div>'+
+            '<div class="stamp">Report filed</div>'+
+            '<ul class="why">'+flatGaps(c).map(p=>'<li><span class="chip '+p.t+'">'+TENSES[p.t].name+'</span> <b>'+esc(p.a[0])+'</b>: '+esc(p.w)+'</li>').join("")+'</ul>';
+    const all = solvedCount()===7;
+    html += '<div class="btnrow">'+(all?'<button class="btn go" data-act="final" type="button">Where is Jenny?</button>':'<button class="btn go" data-act="next" type="button">Next evidence</button>')+
+            '<button class="btn alt" data-act="back" type="button">Back to the map</button></div>';
+  } else {
+    html += '<h3>Your report</h3><p class="note" style="margin-top:0">Write each verb in the correct past tense.</p><div class="report">'+sentenceHTML(c,true)+'</div>';
+    if(S.hintShown[c.id]){
+      html += '<div class="hints"><b>Hints</b><ul>'+flatGaps(c).map((p,i)=>{const g=gs(c.id+"-"+i); return (g.status==="ok"||g.status==="revealed")?"":'<li>('+esc(p.v)+') → '+esc(p.h)+'</li>';}).join("")+'</ul></div>';
+    }
+    html += '<div class="fb" id="fb"></div>'+
+            '<div class="btnrow"><button class="btn" data-act="check" type="button">Check my report</button>'+
+            '<button class="btn alt" data-act="hint" type="button">Hint</button>'+
+            '<button class="btn alt" data-act="back" type="button">Back to the map</button></div>';
+  }
+  panel.innerHTML = html;
+}
+
+function renderFinal(){
+  panel.innerHTML =
+   '<h2>The case is almost closed</h2>'+
+   '<p>Read your case file. Jenny crossed to Whisper Island, and she planned to stay there.</p>'+
+   '<p><b>Click on the map where you think Jenny is now.</b></p>'+
+   '<div class="fb bad" id="fb">'+esc(S.finalMsg)+'</div>'+
+   '<p class="note">Think about the library, the old photo and the map she found.</p>'+
+   '<div class="btnrow"><button class="btn alt" data-act="back" type="button">Review my evidence</button></div>';
+}
+
+function rank(p){
+  if(p>=90) return "Chief Inspector";
+  if(p>=70) return "Detective";
+  if(p>=50) return "Sergeant";
+  return "Rookie: try the case again";
+}
+
+function renderResult(){
+  const p = Math.round(S.score/MAXPTS*100);
+  panel.innerHTML =
+   '<div class="stamp">Case closed</div>'+
+   '<h2>Jenny is safe!</h2>'+
+   '<p>The coastguard found her in the lighthouse cellar on Wednesday evening. She <span class="v sp">was</span> cold and tired, but fine. She <span class="v ppc">had been looking</span> for her grandfather\'s old logbook, and she <span class="v ppc">had been sheltering</span> from the storm for almost two days. Her torch <span class="v pc">was</span> nearly dead and she <span class="v pc">was reading</span> the last page when the rescue team <span class="v sp">arrived</span>. She <span class="v pp">had found</span> the logbook at last.</p>'+
+   '<p class="score">'+S.score+' / '+MAXPTS+'</p>'+
+   '<div class="rank">'+esc(S.name)+', '+rank(p)+'</div>'+
+   '<p class="note">'+p+'% accuracy. Points are lower when you need several attempts or hints.</p>'+
+   '<div class="btnrow"><button class="btn go" data-act="restart" type="button">Play again</button><button class="btn alt" data-act="back" type="button">Review the evidence</button></div>';
+}
+
+/* ---------- TIMELINE ---------- */
+function renderTimeline(){
+  $("#timeline").innerHTML = CLUES.map(c=>{
+    if(S.solved[c.id]){
+      return '<li class="done"><div class="t">'+esc(c.when)+' – '+esc(c.place)+'</div>'+sentenceHTML(c,false)+'</li>';
+    }
+    return '<li><div class="t">'+esc(c.when)+'</div><div class="missing">Evidence missing. Find the pin and file your report.</div></li>';
+  }).join("");
+  $("#timeline").querySelectorAll("p.sent").forEach(p=>{p.style.margin="2px 0"});
+}
+
+/* ---------- ACTIONS ---------- */
+function openClue(id){
+  if(S.view==="final"||S.view==="result"){ if(!S.solved[id]) return; }
+  saveInputs();
+  S.view="clue"; S.current=id; render();
+  const first = panel.querySelector("input.gap:not([disabled])"); if(first) first.focus({preventScroll:true});
+  if(window.innerWidth<=900) panel.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function saveInputs(){
+  panel.querySelectorAll("input.gap").forEach(i=>{ if(!i.disabled) gs(i.dataset.k).value = i.value; });
+}
+
+function doCheck(){
+  const c = CLUES[S.current-1];
+  saveInputs();
+  let bad=0, empty=0, newlyOk=0;
+  flatGaps(c).forEach((p,gi)=>{
+    const g = gs(c.id+"-"+gi);
+    if(g.status==="ok"||g.status==="revealed") return;
+    const v = norm(g.value);
+    if(!v){ empty++; return; }
+    if(p.a.map(norm).includes(v)){
+      g.status="ok"; newlyOk++;
+      let pts = g.tries===0?10:(g.tries===1?6:3);
+      if(g.hint) pts=Math.min(pts,5);
+      S.score+=pts;
+    } else { g.tries++; g.status="bad"; bad++; }
+  });
+  const done = flatGaps(c).every((p,gi)=>{const s=gs(c.id+"-"+gi).status; return s==="ok"||s==="revealed";});
+  if(done){ S.solved[c.id]=true; render(); return; }
+  renderClue(c); renderPins();
+  const fb = $("#fb");
+  if(bad){ fb.className="fb bad"; fb.textContent = bad+(bad>1?" answers are":" answer is")+" not right yet. Check the clue words (while, when, by the time, for…) and the tense label."; }
+  else if(empty){ fb.className="fb bad"; fb.textContent="Fill in every gap, then check again."; }
+  else if(newlyOk){ fb.className="fb ok"; fb.textContent="Good work!"; }
+  const firstBad = panel.querySelector("input.gap.bad") || panel.querySelector("input.gap:not([disabled])");
+  if(firstBad) firstBad.focus({preventScroll:true});
+}
+
+function pickFinal(c){
+  if(c.ok){
+    S.score += S.finalTries===0?10:(S.finalTries===1?6:3);
+    S.finished=true; S.view="result"; render();
+  } else {
+    S.finalTries++; S.wrong[c.id]=true; S.finalMsg=c.msg; renderFinal(); renderPins();
+  }
+}
+
+panel.addEventListener("click",e=>{
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const act = b.dataset.act;
+  if(act==="start"){
+    const n = ($("#nm").value||"").trim(); if(n) S.name=n;
+    S.view="map"; render();
+  } else if(act==="next"){ const c=nextUnsolved(); if(c) openClue(c.id); }
+  else if(act==="back"){ saveInputs(); S.view="map"; render(); }
+  else if(act==="check"){ doCheck(); }
+  else if(act==="hint"){
+    saveInputs(); const c=CLUES[S.current-1]; S.hintShown[c.id]=true;
+    flatGaps(c).forEach((p,i)=>{gs(c.id+"-"+i).hint=true;}); renderClue(c);
+  }
+  else if(act==="reveal"){
+    saveInputs(); const g=gs(b.dataset.k); g.status="revealed"; g.value="";
+    const c=CLUES[S.current-1];
+    const done = flatGaps(c).every((p,gi)=>{const s=gs(c.id+"-"+gi).status; return s==="ok"||s==="revealed";});
+    if(done){ S.solved[c.id]=true; render(); } else { renderClue(c); }
+  }
+  else if(act==="final"){ S.view=S.finished?"result":"final"; S.finalMsg=""; render(); }
+  else if(act==="restart"){ restart(); }
+});
+panel.addEventListener("keydown",e=>{
+  if(e.key==="Enter" && e.target.matches("input.gap")){ e.preventDefault(); doCheck(); }
+  if(e.key==="Enter" && e.target.id==="nm"){ e.preventDefault(); panel.querySelector('[data-act="start"]').click(); }
+});
+
+function restart(){ S = fresh(); render(); }
+$("#btnRestart").addEventListener("click",()=>{ if(S.view==="intro"||confirm("Restart the investigation? Your progress will be lost.")) restart(); });
+$("#chkLabels").addEventListener("change",e=>{ document.body.classList.toggle("nolabels",!e.target.checked); });
+
+render();
+</script>
+</body>
+</html>
