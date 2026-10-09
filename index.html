@@ -124,7 +124,7 @@ details.guide summary{cursor:pointer;font-family:var(--serif);font-size:1.3rem;f
   <div class="hud" role="group" aria-label="Game status">
     <span>Evidence <b id="hudClues">0/7</b></span>
     <span>Score <b id="hudScore">0</b></span>
-    <label><input type="checkbox" id="chkLabels"> Show tense labels</label>
+    <label><input type="checkbox" id="chkLabels" autocomplete="off"> Show tense labels</label>
     <button class="linkbtn" id="btnRestart" type="button">Restart</button>
   </div>
 </header>
@@ -574,6 +574,9 @@ function restart(){ S = fresh(); render(); }
 $("#btnRestart").addEventListener("click",()=>{ if(S.view==="intro"||confirm("Restart the investigation? Your progress will be lost.")) restart(); });
 $("#chkLabels").addEventListener("change",e=>{ document.body.classList.toggle("nolabels",!e.target.checked); });
 
+/* tense labels off by default (also overrides browser form-state restore) */
+$("#chkLabels").checked=false;
+document.body.classList.add("nolabels");
 render();
 </script>
 </body>
